@@ -1,101 +1,190 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import Image from 'next/image';
+import AudioPlayer from '@/components/AudioPlayer';
+
+interface Song {
+  name: string;
+  artist: string;
+  file: File | undefined;
+  image: File | undefined;
+}
+
+interface SongData {
+  name: string;
+  artist: string;
+  songFileUrl: string;
+  coverImageUrl: string;
+}
+
+const Home = () => {
+  const [song, setSong] = useState<Song>({
+    name: "",
+    artist: "",
+    file: new File([""], "", { type: "audio/mp3" }),
+    image: new File([""], "", { type: "image/png" }),
+  });
+
+  const [songs, setSongs] = useState<SongData[]>([]); // State to store fetched songs
+
+  // Fetch songs from API on component mount
+  useEffect(() => {
+    fetch("/api/fetchsongs")
+      .then((res) => res.json())
+      .then((data) => {
+        setSongs(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching songs:", error);
+      });
+  }, []);
+
+  const handleUpload = () => {
+    console.log(song);
+    const formData = new FormData();
+    formData.append("songName", song.name); // Use 'songName' to match server-side
+    formData.append("artistName", song.artist); // Use 'artistName' to match server-side
+    formData.append("songFile", song.file as Blob); // Use 'songFile' to match server-side
+    formData.append("coverImage", song.image as Blob); // Use 'coverImage' to match server-side
+
+    fetch("/api/s3-upload/", {
+      method: "POST",
+      body: formData,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Response from server:", data);
+        // Optionally refetch songs after upload to show the new song
+        fetch("/api/songs")
+          .then((res) => res.json())
+          .then((newData) => {
+            setSongs(newData); // Update the state with new songs
+          });
+      })
+      .catch((error) => {
+        console.error("Error uploading data:", error);
+      });
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="h-screen w-full flex flex-col p-10">
+      <div className="flex justify-between items-center">
+        <h1>
+          <span className="font-bold text-xl">One-Stop For Music</span>
+          <br />
+          <span className="opacity-60">Just Listen What You Want</span>
+        </h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button>Upload Your Song</Button>
+          </SheetTrigger>
+
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Upload song</SheetTitle>
+              <SheetDescription>
+                Upload original Work Only Avoid Copyrighted Content.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="song_name" className="text-right">
+                  Song Name
+                </Label>
+                <Input
+                  value={song.name}
+                  onChange={(e) => setSong({ ...song, name: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="artist_name" className="text-right">
+                  Artist Name
+                </Label>
+                <Input
+                  value={song.artist}
+                  onChange={(e) => setSong({ ...song, artist: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="song_file" className="text-right">
+                  Song File
+                </Label>
+                <Input
+                  id="song_file"
+                  type="file"
+                  onChange={(e) => setSong({ ...song, file: e.target.files?.[0] })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="song_image" className="text-right">
+                  Song Image
+                </Label>
+                <Input
+                  id="song_image"
+                  type="file"
+                  onChange={(e) => setSong({ ...song, image: e.target.files?.[0] })}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <SheetFooter>
+              <SheetClose asChild>
+                <Button onClick={handleUpload}>Upload Song</Button>
+              </SheetClose>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      <div className="w-full h-full p-4 mt-4 flex flex-wrap">
+        {songs.length > 0 ? (
+          songs.map((song, index) => (
+            <div key={index} className="flex flex-col space-y-3 m-4 p-4 border rounded-lg shadow-lg h-1/2">
+              <Image src={song.coverImageUrl} alt={`${song.name} cover`} width={225} height={250} className="rounded-xl object-cover" />
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold">{song.name}</h2>
+                <p className="text-sm text-gray-600">{song.artist}</p>
+                {/* <audio controls src={song.songFileUrl} className="w-full mt-2" /> */}
+                <AudioPlayer audioSrc={song.songFileUrl} />
+              </div>
+            </div>
+          ))
+        ) : (
+          Array(12)
+            .fill(null)
+            .map((_, i) => (
+              <div key={i} className="flex flex-col space-y-3 m-10">
+                <Skeleton className="w-[225px] h-[250px] rounded-xl " />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[250px] " />
+                  <Skeleton className="h-4 w-[200px] " />
+                </div>
+              </div>
+            ))
+        )}
+      </div>
     </div>
   );
 }
+
+export default Home;
+
