@@ -170,7 +170,7 @@ const Home = () => {
         {songs.length > 0 ? (
           songs.map((song, index) => (
             <div key={index} className="flex flex-col space-y-3 m-4 p-4 border rounded-lg shadow-lg h-1/2">
-              <Image src={song.coverImageUrl} alt={`${song.name} cover`} width={225} height={250} className="rounded-xl object-cover" />
+              <Image src={song.coverImageUrl} alt={`${song.name} cover`} width={225} height={250} className="rounded-xl object-cover h-1/2" />
               <div className="space-y-2">
                 <h2 className="text-lg font-semibold">{song.name}</h2>
                 <p className="text-sm text-gray-600">{song.artist}</p>
