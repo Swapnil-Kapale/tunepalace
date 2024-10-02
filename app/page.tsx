@@ -21,8 +21,8 @@ import AudioPlayer from '@/components/AudioPlayer';
 interface Song {
   name: string;
   artist: string;
-  file: File | undefined;
-  image: File | undefined;
+  file: File | null;
+  image: File | null;
 }
 
 interface SongData {
@@ -36,11 +36,22 @@ const Home = () => {
   const [song, setSong] = useState<Song>({
     name: "",
     artist: "",
-    file: new File([""], "", { type: "audio/mp3" }),
-    image: new File([""], "", { type: "image/png" }),
+    file: null, // Initialize as null
+    image: null, // Initialize as null
   });
 
   const [songs, setSongs] = useState<SongData[]>([]); // State to store fetched songs
+
+  // Initialize the File objects on the client side
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSong({
+        ...song,
+        file: new File([""], "", { type: "audio/mp3" }),
+        image: new File([""], "", { type: "image/png" }),
+      });
+    }
+  }, []);
 
   // Fetch songs from API on component mount
   useEffect(() => {
@@ -130,7 +141,7 @@ const Home = () => {
                 <Input
                   id="song_file"
                   type="file"
-                  onChange={(e) => setSong({ ...song, file: e.target.files?.[0] })}
+                  onChange={(e) => setSong({ ...song, file: e.target.files?.[0] || null })}
                   className="col-span-3"
                 />
               </div>
@@ -141,7 +152,7 @@ const Home = () => {
                 <Input
                   id="song_image"
                   type="file"
-                  onChange={(e) => setSong({ ...song, image: e.target.files?.[0] })}
+                  onChange={(e) => setSong({ ...song, image: e.target.files?.[0] || null })}
                   className="col-span-3"
                 />
               </div>
@@ -163,7 +174,6 @@ const Home = () => {
               <div className="space-y-2">
                 <h2 className="text-lg font-semibold">{song.name}</h2>
                 <p className="text-sm text-gray-600">{song.artist}</p>
-                {/* <audio controls src={song.songFileUrl} className="w-full mt-2" /> */}
                 <AudioPlayer audioSrc={song.songFileUrl} />
               </div>
             </div>
@@ -187,4 +197,3 @@ const Home = () => {
 }
 
 export default Home;
-
