@@ -6,6 +6,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast"
 
 interface Song {
   id: number;
@@ -25,12 +26,21 @@ export default function SongsClient({ initialSongs }: SongsClientProps) {
   const [artist, setArtist] = useState('');
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [songFile, setSongFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const uploadSong = async () => {
     if (!title || !artist || !coverImage || !songFile) {
-      alert("Please fill out all fields and upload both files.");
+      toast({
+        title: "Missing Information",
+        description: "Please fill out all fields and upload both files.",
+        variant: "destructive",
+      });
       return;
     }
+
+    setIsUploading(true);
 
     const formData = new FormData();
     formData.append("title", title);
@@ -55,14 +65,28 @@ export default function SongsClient({ initialSongs }: SongsClientProps) {
         setArtist('');
         setCoverImage(null);
         setSongFile(null);
+        setIsDialogOpen(false);
 
-        alert("Song uploaded successfully!");
+        toast({
+          title: "Success",
+          description: "Song uploaded successfully!",
+        });
       } else {
-        alert(`Failed to upload song: ${data.error}`);
+        toast({
+          title: "Upload Failed",
+          description: `Failed to upload song: ${data.error}`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error uploading song:", error);
-      alert("An error occurred while uploading the song.");
+      toast({
+        title: "Error",
+        description: "An error occurred while uploading the song.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -83,19 +107,30 @@ export default function SongsClient({ initialSongs }: SongsClientProps) {
 
       if (response.ok) {
         setSongs(songs.filter(song => song.id !== id));
-        alert("Song deleted successfully!");
+        toast({
+          title: "Success",
+          description: "Song deleted successfully!",
+        });
       } else {
-        alert(`Failed to delete song: ${data.error}`);
+        toast({
+          title: "Deletion Failed",
+          description: `Failed to delete song: ${data.error}`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error deleting song:", error);
-      alert("An error occurred while deleting the song.");
+      toast({
+        title: "Error",
+        description: "An error occurred while deleting the song.",
+        variant: "destructive",
+      });
     }
   };
 
   return (
     <div className="w-screen h-full flex flex-col items-end p-10">
-        <Dialog>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" className="w-40">Upload Song</Button>
         </DialogTrigger>
@@ -133,7 +168,9 @@ export default function SongsClient({ initialSongs }: SongsClientProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" onClick={uploadSong}>Upload</Button>
+            <Button type="button" onClick={uploadSong} disabled={isUploading}>
+              {isUploading ? 'Uploading...' : 'Upload'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
